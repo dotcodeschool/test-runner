@@ -41,11 +41,11 @@ function dir2ext4img {
     mkfs.ext4 -F "$IMG"
     sudo mount "$IMG" "$TMP_MNT"
     sudo tar c -C $DIR . |sudo tar x -C "$TMP_MNT"
-    # resize the filesystem to the minimum size
-    resize2fs -M "$IMG"
     # cleanup
     sudo umount "$TMP_MNT"
     rmdir $TMP_MNT
+    # resize the filesystem to the minimum size
+    resize2fs -M "$IMG"
 }
 
 function compile_and_install {
