@@ -6,7 +6,7 @@ set -eu -o pipefail
 set -x
 PS4='>\t '
 
-ARCH="$(uname -m)"
+ARCH=${1:-$(uname -m)}
 release_url="https://github.com/firecracker-microvm/firecracker/releases"
 
 # Use curl to fetch the latest release tag securely
