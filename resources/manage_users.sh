@@ -40,9 +40,6 @@ function create_user {
     
     echo "Creating user $username with UID/GID: $user_uid"
     sudo useradd -M -N -u $user_uid -g $user_uid -s /usr/sbin/nologin "$username"
-    sudo mkdir -p "/home/$username"
-    sudo chown $user_uid:$user_uid "/home/$username"
-    sudo chmod 700 "/home/$username"
 
     echo "User $username created successfully."
 }
