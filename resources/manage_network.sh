@@ -138,7 +138,7 @@ function cleanup_network {
 }
 
 # Function to retrieve the IP address for a given VM
-function get_ip {
+function get_tap_ip {
     # Extract the IP address using ip command
     local ip_addr=$(ip addr show $TAP_DEV | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
 
@@ -149,9 +149,16 @@ function get_ip {
     fi
 }
 
-# Calculate MAC address for the VM based on IP address of the TAP device
-function get_mac {
-    local ip_addr=$(decimal_to_ip "$(( $(ip_to_decimal $(get_ip "$1")) + 1 ))")
+# Calculate IP address for the VM based on IP address of the TAP device
+function get_fc_ip {
+    local ip_addr=$(get_tap_ip "$1")
+    local fc_ip=$(decimal_to_ip "$(( $(ip_to_decimal $ip_addr) + 1 ))")
+    echo $fc_ip
+}
+
+# Function to convert IP address to MAC address
+function get_fc_mac {
+    local ip_addr=$(get_fc_ip "$1")
     local mac_addr=$(printf "06:00:%02X:%02X:%02X:%02X" $(echo $ip_addr | tr '.' ' '))
     echo $mac_addr
 }
@@ -164,11 +171,14 @@ case "$1" in
     --cleanup)
         cleanup_network "$2"
         ;;
-    --get-ip)
-        get_ip "$2"
+    --get-tap-ip)
+        get_tap_ip "$2"
         ;;
-    --get-mac)
-        get_mac "$2"
+    --get-fc-ip)
+        get_fc_ip "$2"
+        ;;
+    --get-fc-mac)
+        get_fc_mac "$2"
         ;;
     *)
         echo "Invalid option: $1"
