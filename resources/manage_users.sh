@@ -42,6 +42,7 @@ function create_user {
     sudo useradd -M -N -u $user_uid -g $user_uid -s /usr/sbin/nologin "$username"
 
     echo "User $username created successfully."
+    echo $user_uid
 }
 
 # Delete user and clean up UID/GID
