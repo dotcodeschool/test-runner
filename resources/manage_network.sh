@@ -143,11 +143,17 @@ function get_ip {
     local ip_addr=$(ip addr show $TAP_DEV | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
 
     if [ -n "$ip_addr" ]; then
-        echo "IP address for $TAP_DEV:"
         echo "$ip_addr"
     else
         echo "No IP address found for $TAP_DEV"
     fi
+}
+
+# Calculate MAC address for the VM based on IP address of the TAP device
+function get_mac {
+    local ip_addr=$(decimal_to_ip "$(( $(ip_to_decimal $(get_ip "$1")) + 1 ))")
+    local mac_addr=$(printf "06:00:%02X:%02X:%02X:%02X" $(echo $ip_addr | tr '.' ' '))
+    echo $mac_addr
 }
 
 # Handle command line options
@@ -161,9 +167,12 @@ case "$1" in
     --get-ip)
         get_ip "$2"
         ;;
+    --get-mac)
+        get_mac "$2"
+        ;;
     *)
         echo "Invalid option: $1"
-        echo "Usage: $0 --setup <vm_id> | --cleanup <vm_id> | --get-ip <vm_id>"
+        echo "Usage: $0 --setup <vm_id> | --cleanup <vm_id> | --get-ip <vm_id> | --get-mac <vm_id>"
         exit 1
         ;;
 esac
