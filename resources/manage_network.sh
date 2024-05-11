@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Usage: setup_network.sh --setup <vm_id> | --cleanup <vm_id> | --get-ip <vm_id>
-# Example: setup_network.sh --setup vm123
+# Usage: manage_network.sh --setup <VM ID>|--cleanup <VM ID>|--get-tap-ip <VM ID>|--get-fc-ip <VM ID>|--get-fc-mac <VM ID>
+# Example: manage_network.sh --setup 1
 
 set -ex -o pipefail
 
@@ -14,7 +14,7 @@ SUBNET_MASK="/30"
 STEP_SIZE=4
 
 # Enable IP forwarding
-sudo sysctl -w net.ipv4.ip_forward=1
+sudo sysctl -wq net.ipv4.ip_forward=1
 
 # Function to convert IP address to decimal
 ip_to_decimal() {
@@ -103,7 +103,7 @@ function setup_network {
     sudo ip link del "$TAP_DEV" 2> /dev/null || true
 
     # Create and configure the TAP device
-    sudo ip tuntap add dev "$TAP_DEV" mode tap user "$(whoami)"
+    sudo ip tuntap add dev "$TAP_DEV" mode tap user "$(ps -p $(pgrep -f "firecracker --id $id") -o user=)"
     sudo ip addr add "${tap_ip}${SUBNET_MASK}" dev "$TAP_DEV"
     sudo ip link set dev "$TAP_DEV" up
 
@@ -119,7 +119,7 @@ function setup_network {
 function cleanup_network {
     # Remove the specified TAP device
     if [[ -n "$1" ]]; then
-        sudo ip link del "$TAP_DEV"
+        sudo ip link del "$TAP_DEV" 2> /dev/null || true
         sudo iptables -D FORWARD -i "$TAP_DEV" -o "$HOST_IFACE" -j ACCEPT
         echo "Network cleanup completed for TAP device $TAP_DEV"
         return 0
@@ -127,7 +127,7 @@ function cleanup_network {
     else
         # Remove all TAP devices and corresponding iptables rules
         for tap_dev in $(ip link show | grep 'tap' | awk '{print $2}' | sed 's/.$//'); do
-            sudo ip link del "${tap_dev}"
+            sudo ip link del "${tap_dev}" 2> /dev/null || true
             sudo iptables -D FORWARD -i "${tap_dev}" -o "$HOST_IFACE" -j ACCEPT
         done
 
