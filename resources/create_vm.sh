@@ -8,6 +8,7 @@ PS4='>>>\t '
 
 # Configuration
 ID=${1:-"6abaf08ac644c7ad"} # Default SHA1 (echo -n "dotcodeschool" | openssl dgst -sha1 | cut -d' ' -f2 | cut -b -16)
+TAP_DEV="tap_${ID}" # Unique TAP device name based on VM ID - this must match the TAP_DEV variable in manage_network.sh
 # Create user and get UID
 _UID=$(sudo ./manage_users.sh --create "$ID") || { echo "Failed to create user"; exit 1; }
 GID=$_UID
@@ -33,9 +34,10 @@ if jailer --id $ID \
        --gid $GID \
        --daemonize
 then
-        echo "\nVM with ID ${ID} for user ${_UID} in group ${GID} successfully created! :D\n"
+        echo "VM with ID ${ID} for user ${_UID} in group ${GID} successfully created! :D"
 else
-        echo "\nFailed to created VM! :(\n"
+        echo "Failed to created VM! :("
+        exit 1
 fi
 
 sudo ./manage_network.sh --cleanup $ID
@@ -61,7 +63,13 @@ IMAGES_DIR="/var/lib/firecracker/images"
 
 cp -R "${IMAGES_DIR}/." "${INSTANCE_DIR}/root"
 
-KERNEL="./vmlinux-6.1"
+# Create and move filesystem
+sudo ./manage_fs.sh --create "$ID" || { echo "Failed to create filesystem"; exit 1; }
+sudo ./manage_fs.sh --move-in "$ID" || { echo "Failed to move filesystem"; exit 1; }
+
+chown -R $_UID:$GID "${INSTANCE_DIR}/root"
+
+KERNEL="./vmlinux-6.1.90"
 KERNEL_BOOT_ARGS="console=ttyS0 reboot=k panic=1 pci=off"
 
 ARCH=$(uname -m)
@@ -79,7 +87,7 @@ sudo curl -X PUT --unix-socket "${API_SOCKET}" \
     "http://localhost/boot-source"
 
 ROOTFS="./ubuntu-22.04.squashfs"
-USERFS=$(sudo ./manage_fs.sh --create "$ID") || { echo "Failed to create filesystem"; exit 1; }
+USERFS="./userfs.ext4"
 
 # Set userfs
 sudo curl -X PUT --unix-socket "${API_SOCKET}" \
@@ -112,7 +120,7 @@ sudo curl -X PUT --unix-socket "${API_SOCKET}" \
 # The IP address of a guest is derived from its MAC address with
 # `fcnet-setup.sh`, this has been pre-configured in the guest rootfs. It is
 # important that `TAP_IP` and `FC_MAC` match this.
-FC_MAC=$(sudo ./manage_network.sh --get-mac $ID)
+FC_MAC=$(sudo ./manage_network.sh --get-fc-mac $ID)
 
 # Set network interface
 sudo curl -X PUT --unix-socket "${API_SOCKET}" \
@@ -142,10 +150,13 @@ FC_IP=$(sudo ./manage_network.sh --get-fc-ip $ID)
 TAP_IP=$(sudo ./manage_network.sh --get-tap-ip $ID)
 
 # Setup internet access in the guest
-ssh -i ./ubuntu-22.04.id_rsa root@$FC_IP  "ip route add default via $TAP_IP dev eth0"
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "ip route add default via $TAP_IP dev eth0"
+
+# Mount the user filesystem
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "mkdir -p /tmp/dotcodeschool && mount /dev/vdb /tmp/dotcodeschool"
 
 # SSH into the microVM
-ssh -i ./ubuntu-22.04.id_rsa root@$FC_IP
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP
 
 # Use `root` for both the login and password.
 # Run `reboot` to exit.
