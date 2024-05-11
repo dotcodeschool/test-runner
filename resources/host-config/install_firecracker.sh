@@ -34,12 +34,12 @@ if [ ! -d "release-${latest}-${ARCH}" ]; then
 fi
 
 # Move and rename binaries to /usr/local/bin instead of /usr/bin to avoid conflicts with system binaries
-sudo mv "release-${latest}-${ARCH}/firecracker-${latest}-${ARCH}" /usr/local/bin/firecracker
-sudo mv "release-${latest}-${ARCH}/jailer-${latest}-${ARCH}" /usr/local/bin/jailer
+sudo mv "release-${latest}-${ARCH}/firecracker-${latest}-${ARCH}" /usr/bin/firecracker
+sudo mv "release-${latest}-${ARCH}/jailer-${latest}-${ARCH}" /usr/bin/jailer
 
 # Check if binaries exist and set executable permissions
-if [ -f "/usr/local/bin/firecracker" ] && [ -f "/usr/local/bin/jailer" ]; then
-    sudo chmod +x /usr/local/bin/firecracker /usr/local/bin/jailer
+if [ -f "/usr/bin/firecracker" ] && [ -f "/usr/bin/jailer" ]; then
+    sudo chmod +x /usr/bin/firecracker /usr/bin/jailer
 else
     echo "Firecracker binaries are missing after moving." >&2
     exit 1
