@@ -29,6 +29,7 @@ function create_fs {
     if [ -f "$fs_path" ]; then
         echo "Filesystem for repo ID $repo_id already exists. Skipping creation."
         log_message "Filesystem creation skipped for repo ID: $repo_id"
+        echo "$fs_path"
         return
     fi
 
@@ -66,6 +67,8 @@ function move_out_fs {
         echo "Moving filesystem $jail_path to $fs_path"
         mv "$jail_path" "$fs_path"
         log_message "Moved filesystem out of jail: $repo_id"
+        chown root:root "$fs_path" # Ensure the filesystem is owned by root to prevent unauthorized access
+        chmod 600 "$fs_path" # Set the filesystem permissions to 600 to prevent unauthorized access
     else
         echo "Filesystem not found: $jail_path"
         return 1
