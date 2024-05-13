@@ -120,7 +120,7 @@ function cleanup_network {
     # Remove the specified TAP device
     if [[ -n "$1" ]]; then
         sudo ip link del "$TAP_DEV" 2> /dev/null || true
-        sudo iptables -D FORWARD -i "$TAP_DEV" -o "$HOST_IFACE" -j ACCEPT
+        sudo iptables -D FORWARD -i "$TAP_DEV" -o "$HOST_IFACE" -j ACCEPT || true
         echo "Network cleanup completed for TAP device $TAP_DEV"
         return 0
         
@@ -128,11 +128,11 @@ function cleanup_network {
         # Remove all TAP devices and corresponding iptables rules
         for tap_dev in $(ip link show | grep 'tap' | awk '{print $2}' | sed 's/.$//'); do
             sudo ip link del "${tap_dev}" 2> /dev/null || true
-            sudo iptables -D FORWARD -i "${tap_dev}" -o "$HOST_IFACE" -j ACCEPT
+            sudo iptables -D FORWARD -i "${tap_dev}" -o "$HOST_IFACE" -j ACCEPT || true
         done
 
-        sudo iptables -t nat -D POSTROUTING -o "$HOST_IFACE" -j MASQUERADE
-        sudo iptables -D FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+        sudo iptables -t nat -D POSTROUTING -o "$HOST_IFACE" -j MASQUERADE || true
+        sudo iptables -D FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT || true
         echo "Network cleanup completed for all TAP devices"
     fi
 }
