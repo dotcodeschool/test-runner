@@ -155,10 +155,10 @@ ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "ip route ad
 MOUNT_POINT="/tmp/dotcodeschool"
 
 # Mount the user filesystem
-ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "mkdir -p $MOUNT_POINT && mount /dev/vdb $MOUNT_POINT && cd $MOUNT_POINT"
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "mkdir -p $MOUNT_POINT && mount /dev/vdb $MOUNT_POINT"
 
 # SSH into the microVM
-ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa -t root@$FC_IP "cd $MOUNT_POINT && echo 'Welcome to the Dot Code School VM!'; bash"
 
 # Use `root` for both the login and password.
 # Run `reboot` to exit.
