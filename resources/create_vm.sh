@@ -10,7 +10,7 @@ PS4='>>>\t '
 ID=${1:-"6abaf08ac644c7ad"} # Default SHA1 (echo -n "dotcodeschool" | openssl dgst -sha1 | cut -d' ' -f2 | cut -b -16)
 TAP_DEV="tap_${ID}" # Unique TAP device name based on VM ID - this must match the TAP_DEV variable in manage_network.sh
 # Create user and get UID
-_UID=$(sudo ./manage_users.sh --create "$ID") || { echo "Failed to create user"; exit 1; }
+_UID=$(sudo ./manage_users.sh --create "${ID}") || { echo "Failed to create user"; exit 1; }
 GID=$_UID
 
 EXEC_FILE="/usr/bin/firecracker"
@@ -152,8 +152,10 @@ TAP_IP=$(sudo ./manage_network.sh --get-tap-ip $ID)
 # Setup internet access in the guest
 ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "ip route add default via $TAP_IP dev eth0"
 
+MOUNT_POINT="/tmp/dotcodeschool"
+
 # Mount the user filesystem
-ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "mkdir -p /tmp/dotcodeschool && mount /dev/vdb /tmp/dotcodeschool"
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "mkdir -p $MOUNT_POINT && mount /dev/vdb $MOUNT_POINT && cd $MOUNT_POINT"
 
 # SSH into the microVM
 ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP
