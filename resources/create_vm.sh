@@ -10,7 +10,7 @@ PS4='>>>\t '
 ID=${1:-"6abaf08ac644c7ad"} # Default SHA1 (echo -n "dotcodeschool" | openssl dgst -sha1 | cut -d' ' -f2 | cut -b -16)
 TAP_DEV="tap_${ID}" # Unique TAP device name based on VM ID - this must match the TAP_DEV variable in manage_network.sh
 # Create user and get UID
-_UID=$(sudo ./manage_users.sh --create "${ID}") || { echo "Failed to create user"; exit 1; }
+_UID=$(sudo ./manage_users.sh --create "${ID}") || { echo "Failed to create user"; sudo ./cleanup.sh --vm-id "${ID}"; exit 1; }
 GID=$_UID
 
 EXEC_FILE="/usr/bin/firecracker"
@@ -37,6 +37,7 @@ then
         echo "VM with ID ${ID} for user ${_UID} in group ${GID} successfully created! :D"
 else
         echo "Failed to created VM! :("
+        sudo ./cleanup.sh --vm-id $ID
         exit 1
 fi
 
@@ -64,8 +65,8 @@ IMAGES_DIR="/var/lib/firecracker/images"
 cp -R "${IMAGES_DIR}/." "${INSTANCE_DIR}/root"
 
 # Create and move filesystem
-sudo ./manage_fs.sh --create "$ID" || { echo "Failed to create filesystem"; exit 1; }
-sudo ./manage_fs.sh --move-in "$ID" || { echo "Failed to move filesystem"; exit 1; }
+sudo ./manage_fs.sh --create "$ID" || { echo "Failed to create filesystem"; sudo ./cleanup.sh --vm-id "$ID"; exit 1; }
+sudo ./manage_fs.sh --move-in "$ID" || { echo "Failed to move filesystem"; sudo ./cleanup.sh --vm-id "$ID"; exit 1; }
 
 chown -R $_UID:$GID "${INSTANCE_DIR}/root"
 
