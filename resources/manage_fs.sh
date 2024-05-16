@@ -4,7 +4,7 @@
 DATA_DIR="/var/lib/firecracker/data"
 JAILER_DIR="/srv/jailer/firecracker"
 LOG_FILE="/var/log/fs_manager.log"
-GIT_SERVER_URL="https://git.dotcodeschool.com/" # Change this to the URL of your Git server
+GIT_SERVER_URL="https://git.dotcodeschool.com" # !IMPORTANT: Make sure this doesn't have a trailing '/'
 
 # Ensure necessary directories and files exist
 mkdir -p "${DATA_DIR}" "${JAILER_DIR}"
