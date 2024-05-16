@@ -8,6 +8,8 @@ PS4='>>>\t '
 
 # Configuration
 ID=${1:-"6abaf08ac644c7ad"} # Default SHA1 (echo -n "dotcodeschool" | openssl dgst -sha1 | cut -d' ' -f2 | cut -b -16)
+# Truncate the ID to ensure it's no longer than 11 characters
+ID=${ID:0:11}
 TAP_DEV="tap_${ID}" # Unique TAP device name based on VM ID - this must match the TAP_DEV variable in manage_network.sh
 # Create user and get UID
 _UID=$(sudo ./manage_users.sh --create "${ID}") || { echo "Failed to create user"; sudo ./cleanup.sh --vm-id "${ID}"; exit 1; }
