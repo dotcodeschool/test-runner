@@ -6,6 +6,7 @@
 set -ex -o pipefail
 
 VM_ID=$2
+VM_ID=${VM_ID:0:11}     # Truncate the ID to ensure it's no longer than 11 characters
 TAP_DEV="tap_${VM_ID}"  # Unique TAP device name based on VM ID
 HOST_IFACE="enp1s0"     # Host interface for internet access
 
