@@ -27,7 +27,7 @@ function create_fs {
     local repo_id=$1
     local fs_path="${DATA_DIR}/${repo_id}.ext4"
     local rootfs="tmp_rootfs"
-    local repo_url="${GIT_SERVER_URL}/${repo_id}.git" # Change this to the URL of your Git repository
+    local repo_url="${GIT_SERVER_URL}/${repo_id}" # Change this to the URL of your Git repository
 
     if [ -f "$fs_path" ]; then
         echo "Filesystem for repo ID $repo_id already exists. Skipping creation."
@@ -44,7 +44,7 @@ function create_fs {
     mkdir -pv "$rootfs"
     mount "$fs_path" "$rootfs"
     log_message "Mounted filesystem at $rootfs"
-    git clone "${repo_url}.git" "${rootfs}/repo" || { echo "Failed to clone repository"; ./cleanup --vm-id $repo_id; return 1; }
+    git clone "${repo_url}" "${rootfs}/repo" || { echo "Failed to clone repository"; ./cleanup --vm-id $repo_id; return 1; }
     log_message "Cloned ${repo_id} repo to ${rootfs}/repo"
     umount "$rootfs"
     log_message "Unmounted filesystem at $rootfs"
