@@ -38,10 +38,10 @@ function create_user {
 
     local username="vmuser_$vm_id"
     
-    echo "Creating user $username with UID/GID: $user_uid"
+    echo "Creating user $username with UID/GID: $user_uid" >&2
     sudo useradd -M -u $user_uid -g $user_uid -s /usr/bin/bash "$username"
 
-    echo "User $username created successfully."
+    echo "User $username created successfully." >&2
     echo $user_uid
 }
 
