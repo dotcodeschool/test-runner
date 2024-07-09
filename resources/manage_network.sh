@@ -3,7 +3,7 @@
 # Usage: manage_network.sh --setup <VM ID>|--cleanup <VM ID>|--get-tap-ip <VM ID>|--get-fc-ip <VM ID>|--get-fc-mac <VM ID>
 # Example: manage_network.sh --setup 1
 
-set -ex -o pipefail
+set -e -o pipefail
 
 VM_ID=$2
 VM_ID=${VM_ID:0:11}     # Truncate the ID to ensure it's no longer than 11 characters
@@ -120,6 +120,7 @@ function setup_network {
 function cleanup_network {
     # Remove the specified TAP device
     if [[ -n "$1" ]]; then
+        ssh-keygen -f "/root/.ssh/known_hosts" -R "$TAP_DEV" 2> /dev/null || true
         sudo ip link del "$TAP_DEV" 2> /dev/null || true
         sudo iptables -D FORWARD -i "$TAP_DEV" -o "$HOST_IFACE" -j ACCEPT || true
         echo "Network cleanup completed for TAP device $TAP_DEV"
