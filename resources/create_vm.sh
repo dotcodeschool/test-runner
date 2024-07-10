@@ -49,6 +49,16 @@ LOGFILE="${INSTANCE_DIR}/root/firecracker.log"
 
 # Create log file
 touch $LOGFILE
+IMAGES_DIR="/var/lib/firecracker/images"
+
+cp -R "${IMAGES_DIR}/." "${INSTANCE_DIR}/root"
+
+# Create and move filesystem
+
+sudo ./manage_fs.sh --create "$ID" || { echo "Failed to create filesystem"; sudo ./cleanup.sh --vm-id "$ID"; exit 1; }
+sudo ./manage_fs.sh --move-in "$ID" || { echo "Failed to move filesystem"; sudo ./cleanup.sh --vm-id "$ID"; exit 1; }
+
+chown -R $_UID:$GID "${INSTANCE_DIR}/root"
 
 # Set log file
 sudo curl -X PUT --unix-socket "${API_SOCKET}" \
@@ -60,17 +70,7 @@ sudo curl -X PUT --unix-socket "${API_SOCKET}" \
     }" \
     "http://localhost/logger"
 
-IMAGES_DIR="/var/lib/firecracker/images"
-
-cp -R "${IMAGES_DIR}/." "${INSTANCE_DIR}/root"
-
-# Create and move filesystem
-sudo ./manage_fs.sh --create "$ID" || { echo "Failed to create filesystem"; sudo ./cleanup.sh --vm-id "$ID"; exit 1; }
-sudo ./manage_fs.sh --move-in "$ID" || { echo "Failed to move filesystem"; sudo ./cleanup.sh --vm-id "$ID"; exit 1; }
-
-chown -R $_UID:$GID "${INSTANCE_DIR}/root"
-
-KERNEL="./vmlinux-6.1.90"
+KERNEL="./vmlinux-6.1.97"
 KERNEL_BOOT_ARGS="console=ttyS0 reboot=k panic=1 pci=off"
 
 ARCH=$(uname -m)
@@ -143,23 +143,33 @@ sudo curl -X PUT --unix-socket "${API_SOCKET}" \
     }" \
     "http://localhost/actions"
 
-# API requests are handled asynchronously, it is important the microVM has been
-# started before we attempt to SSH into it.
-sleep 2s
-
 FC_IP=$(sudo ./manage_network.sh --get-fc-ip $ID)
 TAP_IP=$(sudo ./manage_network.sh --get-tap-ip $ID)
 
-# Setup internet access in the guest
-ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "ip route add default via $TAP_IP dev eth0"
+# API requests are handled asynchronously, it is important the microVM has been
+# started before we attempt to SSH into it.
+sleep 3s
 
 MOUNT_POINT="/tmp/dotcodeschool"
 
+# Setup internet access in the guest
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  <<EOF
+ip route add default via $TAP_IP dev eth0
+
 # Mount the user filesystem
-ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa root@$FC_IP  "mkdir -p $MOUNT_POINT && mount /dev/vdb $MOUNT_POINT"
+mkdir -p $MOUNT_POINT && mount /dev/vdb $MOUNT_POINT
+
+# Make .cargo directory in the user filesystem
+mkdir -p $MOUNT_POINT/.cargo
+
+# Copy .cargo directory files to the user filesystem and set cargo home
+cp -ru /root/.cargo/. $MOUNT_POINT/.cargo
+export CARGO_HOME=$MOUNT_POINT/.cargo
+cd $MOUNT_POINT/repo && cargo test
+EOF
 
 # SSH into the microVM
-ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa -t root@$FC_IP "cd $MOUNT_POINT && echo 'Welcome to the Dot Code School VM!'; bash"
+ssh -i /var/lib/firecracker/images/ubuntu-22.04.id_rsa -t root@$FC_IP "cd $MOUNT_POINT/repo && echo 'Welcome to the Dot Code School VM!'; bash"
 
 # Use `root` for both the login and password.
 # Run `reboot` to exit.
